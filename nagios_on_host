@@ -1,0 +1,124 @@
+Monitor a CentOS 7 Host with NRPE
+=================================
+
+1) Plugins Required on Target Server
+====================================
+On a server that you want to monitor, install the EPEL repository:
+
+        sudo bash
+
+        yum install -y httpd vim wget
+
+        wget http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-10.noarch.rpm
+        
+        rpm -ivh epel-release-7-10.noarch.rpm
+
+        yum install -y nrpe nagios-plugins-all openssl
+
+2) Configure Monitoring targets
+===============================
+        vi /etc/nagios/nrpe.cfg
+
+Find the allowed_hosts directive, and add the private IP address of your Nagios server to the comma-delimited list (substitute it in place of the highlighted example):
+
+	allowed_hosts=127.0.0.1,client_ip //add the ip for the client server.
+
+Save and exit.
+
+This configures NRPE to accept requests from your Nagios server, via its private IP address.
+
+3) Start NRPE and HTTPD Service
+================================
+Restart NRPE to put the change into effect:
+
+        service httpd start
+
+        chkconfig httpd on
+
+        service nrpe start        
+
+        chkconfig nrpe on
+
+4) Ports Should Be Enabled On Client Server
+===========================================
+
+HTTP : 80
+
+SSH : 22
+
+TCP RULE : 5666 for nrpe
+
+ICMP RULE : echo request
+
+4) Add Host to Nagios Configuration on Nagios Master Server
+===========================================================
+On your on Nagios Master Server, edit configuration file 
+
+        vi /usr/local/nagios/etc/nagios.cfg
+
+        //uncomment this line
+        ======================
+        cfg_dir=/usr/local/nagios/etc/servers
+
+        //make directoy servers under
+        =============================
+        mkdir /usr/local/nagios/etc/servers
+
+5) Create Config File on Nagios Master Server
+=============================================
+        vi /usr/local/nagios/etc/servers/clients.cfg
+
+        define host {
+        use                     linux-server
+        host_name               client
+        alias                   client
+        address                 client_Public_ip
+        max_check_attempts      5
+        check_period            24x7
+        notification_interval   30
+        notification_period     24x7
+        }
+
+Save and exit.
+
+        service nagios restart
+
+======================================================================================
+
+With the configuration file above, Nagios will only monitor if the host is up or down. 
+
+If this is sufficient for you, save and exit then restart Nagios. 
+
+If you want to monitor particular services, read on.
+
+Add any of these service blocks for services you want to monitor. 
+
+Note that the value of check_command determines what will be monitored, 
+
+including status threshold values. 
+
+Here are some examples that you can add to your host's configuration file:
+
+6) Ping Service Moniotoring
+========================================================================================
+
+        vi /usr/local/nagios/etc/servers/clients.cfg
+
+        define service {
+                use                     generic-service
+                host_name               client
+                service_description     PING
+                check_command           check_ping!100.0,20%!500.0,60%
+        }
+
+	define service {
+                use                             generic-service
+                host_name                       client
+                service_description             SSH
+                check_command                   check_ssh
+                notifications_enabled           0
+        }
+
+Save and exit.
+
+        service nagios restart
