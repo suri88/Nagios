@@ -1,0 +1,115 @@
+# NagiosNagios On Centos/RedHat/Fedora Practical Guide
+================================================
+
+1) Install Build Dependencies
+=============================
+sudo bash
+
+yum install -y httpd vim wget gcc glibc glibc-common gd gd-devel make net-snmp openssl-devel xinetd unzip php
+
+2) Create Nagios User and Group
+===============================
+useradd nagios
+
+groupadd nagcmd
+
+usermod -a -G nagcmd nagios
+
+3) Install Nagios Core
+======================
+cd
+
+wget https://assets.nagios.com/downloads/nagioscore/releases/nagios-4.3.4.tar.gz
+
+tar xvf nagios-4.3.4.tar.gz
+
+cd nagios-4.3.4*
+
+./configure --with-command-group=nagcmd 
+
+make all
+
+make install
+
+make install-commandmode
+
+make install-init
+
+make install-config
+
+4) Install Nagios Web interface
+===============================
+make install-webconf
+
+usermod -G nagcmd apache
+
+5) Install Nagios Plugins
+=========================
+cd
+
+wget http://nagios-plugins.org/download/nagios-plugins-2.2.1.tar.gz
+
+tar xvf nagios-plugins-*.tar.gz
+
+cd nagios-plugins-*
+
+./configure --with-nagios-user=nagios --with-nagios-group=nagios --with-openssl
+
+make
+
+make install
+
+6) Configure Apache
+====================
+Use htpasswd to create an admin user, called "nagiosadmin", that can access the Nagios web interface:
+
+	htpasswd -c /usr/local/nagios/etc/htpasswd.users nagiosadmin
+
+Enter a password at the prompt. Remember this login, as you will need it to access the Nagios web interface.
+
+Note: If you create a user that is not named "nagiosadmin", you will need to edit /usr/local/nagios/etc/cgi.cfg and change all the "nagiosadmin" references to the user you created.
+
+Nagios is ready to be started. Let's do that, and restart Apache:
+
+8) SELinux to permissive mode
+=============================
+vi /etc/selinux/config
+
+SELINUX=permissive
+
+service nagios start
+
+service httpd start
+
+chkconfig nagios on
+
+chkconfig httpd on
+
+9) Ports Should Be Enabled
+==========================
+
+HTTP : 80
+
+SSH : 22
+
+TCP RULE : 5666 for nrpe
+
+ICMP RULE : echo request
+
+ICMP RULE : echo reply
+
+10) Accessing the Nagios Web Interface
+======================================
+service nagios restart
+
+service httpd restart
+
+Nagios is now running, so let's try and log in.
+
+Open your favorite web browser, and go to your Nagios server (substitute the IP address or hostname for the highlighted part):
+
+	http://<serverIp>/nagios
+
+Because we configured Apache to use htpasswd, you must enter the login credentials that you created earlier.
+
+We used "nagiosadmin" as the username: and password as you have set previously
