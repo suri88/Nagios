@@ -1,0 +1,13 @@
+https://stackoverflow.com/questions/25135347/how-to-check-status-of-urls-from-text-file-using-bash-shell-script
+
+
+
+
+import subprocess
+
+proc = subprocess.Popen(["curl", "--head", "www.test.com"], stdout=subprocess.PIPE)
+output = proc.communicate()
+
+for line in output:
+    print line
+    print "yes"
